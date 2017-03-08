@@ -6,13 +6,17 @@ import android.content.Intent;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraManager;
 
-import static com.example.ym.flashlight.MainActivity.isTorch;
-import static com.example.ym.flashlight.MainActivity.mTorchButton;
-import static com.example.ym.flashlight.MainActivity.notificationManager;
+
+import static com.example.ym.flashlight.FlashFrag.mTorchButton;
+import static com.example.ym.flashlight.FlashFrag.notificationManager;
+import static com.example.ym.flashlight.FlashFrag.isTorch;
+
+
+
 
 public class FlashClose extends BroadcastReceiver {
     private CameraManager mCamera ;
-    private   String cameraid;
+    private String cameraid;
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -28,7 +32,7 @@ public class FlashClose extends BroadcastReceiver {
         isTorch = true;
 
         String action = intent.getAction();
-        if (action.equals(MainActivity.CLOSE_FLASH)){
+        if (action.equals(FlashFrag.CLOSE_FLASH)){
             try {
                 mCamera.setTorchMode(cameraid,false);
             }catch (CameraAccessException e){
