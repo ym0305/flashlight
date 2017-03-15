@@ -1,24 +1,36 @@
 package com.example.ym.flashlight;
 
 
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Context;
+import android.content.Intent;
+import android.graphics.BitmapFactory;
+import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraManager;
+import android.os.Build;
 import android.os.Bundle;
-import android.support.design.widget.TabLayout;
-import android.support.v4.app.Fragment;
-import android.support.v4.view.ViewPager;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
-import android.view.View;
 
-import java.util.ArrayList;
-import java.util.List;
+
+
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.app.NotificationCompat;
+
+import android.view.View;
+import android.widget.ImageButton;
+
+
+
 
 public class MainActivity extends AppCompatActivity {
 
-    private TabLayout tabLayout;
-    private Toolbar toolbar;
-    private ViewPager viewPager;
-    private FragAdapter fragAdapter;
-    private List<Fragment> fragments;
+    private CameraManager mCameraManager;
+    public static ImageButton mTorchButton;
+    private String cameraId;
+    public static boolean isTorch;
+    public static NotificationManager notificationManager;
+    public static final String CLOSE_FLASH = "com.android.broadcast.closeflash";
 
 
 
@@ -27,29 +39,102 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        mTorchButton = (ImageButton)findViewById(R.id.isTorch);
 
 
 
-        tabLayout = (TabLayout)findViewById(R.id.tablayout);
-        toolbar = (Toolbar)findViewById(R.id.toolbar);
-        viewPager = (ViewPager)findViewById(R.id.viewpager);
-        setSupportActionBar(toolbar);
-        initViewPager();
+
+        mCameraManager = (CameraManager)getSystemService(Context.CAMERA_SERVICE);
 
 
+
+        isTorch = true;
+        try{
+            cameraId = mCameraManager.getCameraIdList()[0];
+        }catch (CameraAccessException e){
+            e.printStackTrace();
+        }
+
+        mTorchButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+
+
+
+            public void onClick(View view) {
+
+                if (isTorch){
+                    trunOnFlashLight();
+
+                }else{
+                    trunOffFlashLight();
+
+                }
+            }
+        });
 
     }
 
-    private void initViewPager(){
-        tabLayout.setupWithViewPager(viewPager);
-        fragments = new ArrayList<Fragment>();
-        fragments.add(new FlashFrag());
-        fragments.add(new OtherFrag());
-        fragAdapter = new FragAdapter(getSupportFragmentManager(),fragments);
-        viewPager.setAdapter(fragAdapter);
+    private void trunOnFlashLight(){
+        try{
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
+                mCameraManager.setTorchMode(cameraId,true);
+                mTorchButton.setImageResource(R.drawable.light_on);
+                openNotification();
+                isTorch = false;
 
+            }
+        }catch (CameraAccessException e){
+            e.printStackTrace();
+        }
+    }
+
+
+
+    private void trunOffFlashLight(){
+        try{
+            mCameraManager.setTorchMode(cameraId,false);
+            mTorchButton.setImageResource(R.drawable.light_off);
+            closeNotification();
+            isTorch = true;
+
+        }catch (CameraAccessException e){
+            e.printStackTrace();
+        }
+    }
+
+
+
+    private void openNotification(){
+
+        notificationManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+        Notification notification = new NotificationCompat.Builder(this)
+                .setContentText("闪光灯正在运行")
+                .setContentTitle("点击关闭闪光灯")
+                .setLargeIcon(BitmapFactory.decodeResource(getResources(),R.drawable.on))
+                .setSmallIcon(R.drawable.on)
+                .setContentIntent(pendingIntent())
+                .build();
+        notificationManager.notify(1,notification);
 
     }
+
+    private void closeNotification(){
+
+        notificationManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+
+        notificationManager.cancel(1);
+
+    }
+
+    private PendingIntent pendingIntent(){
+        Intent intent = new Intent();
+        intent.setAction(CLOSE_FLASH);
+        intent.setClass(this,FlashClose.class);
+
+
+        return PendingIntent.getBroadcast(this,0,intent,0);
+    }
+
 
 
 
